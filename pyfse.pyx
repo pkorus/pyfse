@@ -15,32 +15,24 @@ cdef extern from "fse.h":
 def py_hello(name: bytes) -> None:
     print("Hello")
 
-def compress(src: bytes) -> bytes:
-    # print("Compressing", src)
+def easy_compress(src: bytes) -> bytes:
     cdef unsigned int dst_size = FSE_compressBound(len(src))
-    # print('Recommended size', dst_size)
     cdef unsigned char *dst = <unsigned char*> malloc(dst_size * sizeof(unsigned char))
     cdef unsigned char * src_ptr = src 
-    # print("Init dst", dst)
     ret = FSE_compress(dst, dst_size, src_ptr, len(src))
-    # print('Comp ret: ', ret)
-    # print('Comp out: ', dst)
-    output_list = bytes(dst) # Converts
+    if FSE_isError(ret):
+        raise ValueError("Encoding Error: {}".format(FSE_getErrorName(ret)))
+    output_list = bytes(dst[:ret]) # Converts the locally allocated buffer to a Python structure
     free(dst)
     return output_list
 
-def decompress(src: bytes) -> bytes:
-    # print("Decompressing", src)
-    cdef unsigned int dst_size = 10 * len(src)
-    # print('Recommended size', dst_size)
+def easy_decompress(src: bytes, max_length:int=0) -> bytes:
+    cdef unsigned int dst_size = 10 * len(src) if max_length == 0 else max_length
     cdef unsigned char *dst = <unsigned char*> malloc(dst_size * sizeof(unsigned char))
     cdef unsigned char * src_ptr = src 
-    # print("Init dst", dst)
     ret = FSE_decompress(dst, dst_size, src_ptr, len(src))
     if FSE_isError(ret):
         raise ValueError("Decoding Error: {}".format(FSE_getErrorName(ret)))
-    # print('Decomp ret: ', ret)
-    # print('Decomp out: ', dst)
-    output_list = bytes(dst) # Converts
+    output_list = bytes(dst[:ret]) # Converts the locally allocated buffer to a Python structure
     free(dst)
     return output_list
