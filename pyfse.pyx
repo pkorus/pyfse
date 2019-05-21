@@ -12,9 +12,6 @@ cdef extern from "fse.h":
 
     const char* FSE_getErrorName(size_t code);
 
-def py_hello(name: bytes) -> None:
-    print("Hello")
-
 def easy_compress(src: bytes) -> bytes:
     cdef unsigned int dst_size = FSE_compressBound(len(src))
     cdef unsigned char *dst = <unsigned char*> malloc(dst_size * sizeof(unsigned char))
