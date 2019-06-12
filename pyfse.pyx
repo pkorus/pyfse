@@ -19,6 +19,8 @@ def easy_compress(src: bytes) -> bytes:
     ret = FSE_compress(dst, dst_size, src_ptr, len(src))
     if FSE_isError(ret):
         raise ValueError("Encoding Error: {}".format(FSE_getErrorName(ret)))
+    if ret == 0:
+        raise ValueError("Encoding Error: data is not compressible")
     output_list = bytes(dst[:ret]) # Converts the locally allocated buffer to a Python structure
     free(dst)
     return output_list
