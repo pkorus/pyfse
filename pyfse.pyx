@@ -12,15 +12,28 @@ cdef extern from "fse.h":
 
     const char* FSE_getErrorName(size_t code);
 
+class FSEException(Exception):
+    pass
+
+class FSENotCompressibleError(FSEException):
+    pass
+
+class FSESymbolRepetitionError(FSEException):
+    pass
+
 def easy_compress(src: bytes) -> bytes:
     cdef unsigned int dst_size = FSE_compressBound(len(src))
     cdef unsigned char *dst = <unsigned char*> malloc(dst_size * sizeof(unsigned char))
     cdef unsigned char * src_ptr = src 
     ret = FSE_compress(dst, dst_size, src_ptr, len(src))
+
     if FSE_isError(ret):
-        raise ValueError("Encoding Error: {}".format(FSE_getErrorName(ret)))
-    if ret == 0:
-        raise ValueError("Encoding Error: data is not compressible")
+        raise FSEException("Encoding Error: {}".format(FSE_getErrorName(ret)))
+    elif ret == 0:
+        raise FSENotCompressibleError("Encoding Error: data is not compressible")
+    elif ret == 1:
+        raise FSESymbolRepetitionError("Encoding Error: input data is a repetition of a single byte - use RLE encoding instead")
+
     output_list = bytes(dst[:ret]) # Converts the locally allocated buffer to a Python structure
     free(dst)
     return output_list
@@ -30,8 +43,10 @@ def easy_decompress(src: bytes, max_length:int=0) -> bytes:
     cdef unsigned char *dst = <unsigned char*> malloc(dst_size * sizeof(unsigned char))
     cdef unsigned char * src_ptr = src 
     ret = FSE_decompress(dst, dst_size, src_ptr, len(src))
+
     if FSE_isError(ret):
-        raise ValueError("Decoding Error: {}".format(FSE_getErrorName(ret)))
+        raise FSEException("Decoding Error: {}".format(FSE_getErrorName(ret)))
+
     output_list = bytes(dst[:ret]) # Converts the locally allocated buffer to a Python structure
     free(dst)
     return output_list
