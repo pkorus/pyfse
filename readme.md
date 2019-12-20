@@ -1,6 +1,6 @@
 # Python FSE
 
-This repository contains simple Cython wrappers for the [finite state entropy (FSE)](https://github.com/Cyan4973/FiniteStateEntropy) codec.
+This repository contains a simple Cython wrapper for the [finite state entropy](https://github.com/Cyan4973/FiniteStateEntropy) codec by Yann Collet based on [asymmetric numeral systems](https://arxiv.org/abs/1311.2540) by Jarek Duda).
 
 ## Setup
 
@@ -24,8 +24,8 @@ X = pyfse.decompress(y)
 x == X
 ```
 
-There is also a simple demo script to show a text coding example.
+There is also a simple demo script to show a text coding example:
 
 ```
-> python3 -m unittest -q
+> python3 demo.py
 ```
