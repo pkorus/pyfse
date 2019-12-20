@@ -5,25 +5,33 @@ import utils
 
 class EasyTest(unittest.TestCase):
 
-    def setUp(self) -> None:
-        self.inputs = {}
+    @classmethod
+    def setUpClass(cls) -> None:
+        EasyTest.inputs = {}
 
         with open('tests/string.txt') as f:
-            self.inputs['ascii'] = f.read().encode('ascii')
+            EasyTest.inputs['ascii'] = f.read().encode('ascii')
+
+        with open('tests/all_zeros.dat') as f:
+            EasyTest.inputs['all_zeros'] = bytes([int(x) for x in f.read().strip()])
 
         with open('tests/binary.dat') as f:
-            self.inputs['binary'] = bytes([int(x) for x in f.read()])
+            EasyTest.inputs['binary'] = bytes([int(x) for x in f.read()])
 
         with open('tests/numbers.dat') as f:
-            self.inputs['numbers'] = bytes([127 + int(x) for x in f.read().split(', ')])
+            EasyTest.inputs['numbers'] = bytes([127 + int(x) for x in f.read().split(', ')])
 
-    def easy_process_input(self, key):
-        input = self.inputs[key]
+    def process_input(self, key):
+        input = EasyTest.inputs[key]
         input_prob = utils.symbol_probabilities(input)
         input_entropy = utils.entropy(input_prob.values())
 
-        coded_fse = pyfse.easy_compress(input)
-        decoded_fse = pyfse.easy_decompress(coded_fse)
+        print('\n# Test: {}'.format(key))
+        print('Input size:             {:,} symbols'.format(len(input)))
+        print('Entropy:                {:.2f}'.format(input_entropy))
+
+        coded_fse = pyfse.compress(input)
+        decoded_fse = pyfse.decompress(coded_fse)
 
         # Check if the coded stream is within 10% of the entropy
         self.assertLessEqual(len(coded_fse), 1.1 * len(input) * input_entropy / 8)
@@ -33,17 +41,18 @@ class EasyTest(unittest.TestCase):
 
         limit = len(input) * input_entropy / 8
 
-        print('Input ({}): {:,} symbols'.format(key, len(input)))
-        print('Entropy: {:.2f}'.format(input_entropy))
-        print('Theoretical limit: {:,.1f} bytes'.format(limit))
-        print('FSE coded stream: {:,} bytes [{:.0f}%]'.format(len(coded_fse), 100 * len(coded_fse) / limit))
-        print('Decoding status: {}'.format(input == decoded_fse))
+        print('Theoretical limit:      {:,.1f} bytes'.format(limit))
+        print('FSE coded stream:       {:,} bytes [{:.0f}%]'.format(len(coded_fse), 100 * len(coded_fse) / limit))
+        print('Decoded stream equal?:  {}'.format(input == decoded_fse))
 
-    def test_easy_ascii(self):
-        self.easy_process_input('ascii')
+    def test_ascii(self):
+        self.process_input('ascii')
 
-    def test_easy_numbers(self):
-        self.easy_process_input('numbers')
+    def test_numbers(self):
+        self.process_input('numbers')
 
-    def test_easy_binary(self):
-        self.easy_process_input('binary')
+    def test_binary(self):
+        self.process_input('binary')
+
+    def test_all_zeros(self):
+        self.assertRaises(pyfse.FSESymbolRepetitionError, lambda : self.process_input('all_zeros'))

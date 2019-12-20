@@ -9,4 +9,4 @@ $(LIB_DIR)/libfse.a:
 	make -C $(LIB_DIR) libfse.a
 
 clean:
-	rm *.so pyfse.c
+	rm *.so

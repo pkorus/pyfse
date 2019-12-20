@@ -21,7 +21,18 @@ class FSENotCompressibleError(FSEException):
 class FSESymbolRepetitionError(FSEException):
     pass
 
-def easy_compress(src: bytes) -> bytes:
+def compress(src: bytes) -> bytes:
+    """
+    Compress bytes from 'src' and return FSE coded bytes.
+
+    Returns: 
+        A bytes object with encoded input data.
+
+    Raises:
+        FSENotCompressibleError  - input data is not compressible
+        FSESymbolRepetitionError - input data is a repetition of a single byte - use RLE encoding instead
+        FSEException             - other encoding errors (see message for details)
+    """
     cdef unsigned int dst_size = FSE_compressBound(len(src))
     cdef unsigned char *dst = <unsigned char*> malloc(dst_size * sizeof(unsigned char))
     cdef unsigned char * src_ptr = src 
@@ -34,11 +45,20 @@ def easy_compress(src: bytes) -> bytes:
     elif ret == 1:
         raise FSESymbolRepetitionError("Encoding Error: input data is a repetition of a single byte - use RLE encoding instead")
 
-    output_list = bytes(dst[:ret]) # Converts the locally allocated buffer to a Python structure
+    output = bytes(dst[:ret]) # Converts the locally allocated buffer to a Python structure
     free(dst)
-    return output_list
+    return output
 
-def easy_decompress(src: bytes, max_length:int=0) -> bytes:
+def decompress(src: bytes, max_length:int=0) -> bytes:
+    """
+    Decompress FSE-coded bytes. The output buffer is allocated according to the provided max_length.
+
+    Returns:
+        A bytes object with decoded data.
+
+    Raises:
+        FSEException             - various decoding errors (see message for details)
+    """
     cdef unsigned int dst_size = 10 * len(src) if max_length == 0 else max_length
     cdef unsigned char *dst = <unsigned char*> malloc(dst_size * sizeof(unsigned char))
     cdef unsigned char * src_ptr = src 
@@ -47,6 +67,6 @@ def easy_decompress(src: bytes, max_length:int=0) -> bytes:
     if FSE_isError(ret):
         raise FSEException("Decoding Error: {}".format(FSE_getErrorName(ret)))
 
-    output_list = bytes(dst[:ret]) # Converts the locally allocated buffer to a Python structure
+    output = bytes(dst[:ret]) # Converts the locally allocated buffer to a Python structure
     free(dst)
-    return output_list
+    return output
